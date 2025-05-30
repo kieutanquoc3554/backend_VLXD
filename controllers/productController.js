@@ -75,7 +75,7 @@ exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const product = req.body;
-    const response = await productModel.updateProduct(id, product);
+    const response = await productModel.updateProduct(id, product, req.user.id);
     res.status(200).json({
       message: "Cập nhật sản phẩm thành công!",
       response,

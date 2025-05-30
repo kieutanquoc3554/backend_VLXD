@@ -37,18 +37,13 @@ exports.getProductById = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const id = await Inventory.create(req.body, req.user.id);
-    const total = await Inventory.getTotalQuantityByProductId(
-      req.body.product_id
-    );
-    await Product.updateStockQuantity(req.body.product_id, total);
+    const result = await Inventory.create(req.body, req.user.id);
     res.json({
-      message: "Thêm mới tồn kho thành công!",
-      id,
-      new_stock_quantity: total,
+      message: "Nhập kho thành công!",
+      import_slip_id: result.importSlipId,
     });
   } catch (error) {
-    res.status(500).json({ message: "Lỗi khi thêm kho hàng!", error });
+    res.status(500).json({ message: "Lỗi khi nhập kho", error });
   }
 };
 
@@ -124,5 +119,16 @@ exports.getStockCheckDetails = async (req, res) => {
     res
       .status(500)
       .json({ message: "Lỗi khi lấy chi tiết phiếu kiểm kho", error });
+  }
+};
+
+exports.getAllImportSlips = async (req, res) => {
+  try {
+    const import_slips = await Inventory.getAllImportSlips();
+    res
+      .status(200)
+      .json({ message: "Lấy danh sách phiếu nhập thành công", import_slips });
+  } catch (error) {
+    res.status(500).json("Lỗi xảy ra khi lấy danh sách phiếu nhập", error);
   }
 };

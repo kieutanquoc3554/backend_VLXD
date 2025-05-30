@@ -18,5 +18,6 @@ router.post(
 );
 router.get("/stock-check/all", inventoryController.getAllStockCheckReports);
 router.get("/stock-check/detail", inventoryController.getStockCheckDetails);
+router.get("/import_slips/all", inventoryController.getAllImportSlips);
 
 module.exports = router;

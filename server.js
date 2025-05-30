@@ -5,6 +5,8 @@ const supplierRoutes = require("./routes/supplierRoutes");
 const customerRoutes = require("./routes/customerRoutes");
 const productRoutes = require("./routes/productRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
+const orderRoutes = require("./routes/orderRoutes");
+const debtRoutes = require("./routes/debtRoutes");
 const express = require("express");
 const cors = require("cors");
 const db = require("./utils/db");
@@ -24,6 +26,8 @@ app.use("/api/supplier", supplierRoutes);
 app.use("/api/customer", customerRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/inventory", inventoryRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/debt", debtRoutes);
 
 app.post("/upload", upload.single("image"), async (req, res) => {
   try {

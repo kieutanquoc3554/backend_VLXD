@@ -4,7 +4,8 @@ exports.getAllInventory = async () => {
   const sql = `SELECT inventory.*, products.name AS product_name, categories.name AS product_category 
   FROM inventory 
   JOIN products ON inventory.product_id = products.id 
-  JOIN categories ON products.category_id = categories.id`;
+  JOIN categories ON products.category_id = categories.id WHERE products.isDeleted = 0 AND products.disabled = 0`;
+
   const [rows] = await db.query(sql);
   return rows;
 };
@@ -16,33 +17,66 @@ exports.getById = async (id) => {
 };
 
 exports.getProductById = async (id) => {
-  const sql = "SELECT * FROM inventory WHERE product_id = ?";
+  const sql =
+    "SELECT i.*, p.price, p.name FROM inventory i JOIN products p ON i.product_id = p.id WHERE product_id = ?";
   const [rows] = await db.query(sql, [id]);
-  return rows;
+  return rows[0];
 };
 
 exports.create = async (data, userId) => {
-  const { product_id, quantity, warehouse_location } = data;
-  const [rows] = await db.query(
-    "SELECT * FROM inventory WHERE product_id = ?",
-    [product_id]
-  );
-  if (rows.length > 0) {
-    await db.query(
-      `UPDATE inventory SET quantity = quantity + ? WHERE product_id = ?`,
-      [quantity, product_id]
+  const { note = "Nhập kho", items = [], suppliers_id } = data;
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [importSlipResult] = await connection.query(
+      `INSERT INTO import_slips (suppliers_id, note, created_by) VALUES (?, ?, ?)`,
+      [suppliers_id, note, userId]
     );
-  } else {
-    await db.query(
-      `INSERT INTO inventory (product_id, quantity, warehouse_location) VALUES (?, ?, ?)`,
-      [product_id, quantity, warehouse_location]
+    const importSlipId = importSlipResult.insertId;
+    let total_price = 0;
+    for (const item of items) {
+      const { product_id, quantity, unit_price, warehouse_location } = item;
+      total_price += quantity * unit_price;
+      await connection.query(
+        `INSERT INTO import_slip_items (import_slip_id, product_id, quantity, unit_price, warehouse_location) VALUES (?, ?, ?, ?, ?)`,
+        [importSlipId, product_id, quantity, unit_price, warehouse_location]
+      );
+      const [rows] = await connection.query(
+        "SELECT * FROM inventory WHERE product_id = ?",
+        [product_id]
+      );
+      if (rows.length > 0) {
+        await connection.query(
+          `UPDATE inventory SET quantity = quantity + ? WHERE product_id = ?`,
+          [quantity, product_id]
+        );
+      } else {
+        await connection.query(
+          `INSERT INTO inventory (product_id, quantity, warehouse_location) VALUES (?, ?, ?)`,
+          [product_id, quantity, warehouse_location]
+        );
+      }
+      await connection.query(
+        `UPDATE products SET import_price = ? WHERE id = ?`,
+        [unit_price, product_id]
+      );
+      await connection.query(
+        `INSERT INTO inventory_logs (product_id, type, quantity, note, created_by) VALUE (?, 'import', ?, ?, ?)`,
+        [product_id, quantity, `Theo phiếu nhập ${importSlipId}`, userId]
+      );
+    }
+    await connection.query(
+      `UPDATE import_slips SET total_price = ? WHERE id = ?`,
+      [total_price, importSlipId]
     );
+    await connection.commit();
+    return { importSlipId };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
   }
-  await db.query(
-    `INSERT INTO inventory_logs (product_id, type, quantity, note, created_by) VALUES (?, 'import', ?, ?, ?)`,
-    [product_id, quantity, "Nhập kho hoặc thêm số lượng", userId]
-  );
-  return product_id;
 };
 
 exports.getTotalQuantityByProductId = async (product_id) => {
@@ -73,6 +107,8 @@ exports.update = async (id, data, userId) => {
       `Điều chỉnh số lượng từ ${oldQuantity} → ${quantity}`,
       userId,
     ]);
+    const sqlUpdateQuantityProduct = `UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?`;
+    await db.query(sqlUpdateQuantityProduct, [quantityDiff, product_id]);
   }
 };
 
@@ -168,4 +204,13 @@ exports.getStockCheckReportsDetail = async (created_time, created_by) => {
   `;
   const [rows] = await db.query(sql, [mysqlDateTime, created_by]);
   return rows;
+};
+
+exports.getAllImportSlips = async () => {
+  const sql = `SELECT islip.id, islip.note, islip.created_at, islip.total_price, s.name AS supplier_name, e.name AS employee_name 
+              FROM import_slips islip 
+              LEFT JOIN suppliers s ON s.id = islip.suppliers_id
+              JOIN employees e ON e.id = islip.created_by`;
+  const [import_slips] = await db.query(sql);
+  return import_slips;
 };

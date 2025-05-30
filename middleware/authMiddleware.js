@@ -11,7 +11,7 @@ exports.authMiddleware = async (req, res, next) => {
     if (!session) {
       return res
         .status(403)
-        .json({ message: "Session hết hạn hoặc không hợp lệ!" });
+        .json({ message: "Session hết hạn hoặc không hợp lệ!", token });
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
