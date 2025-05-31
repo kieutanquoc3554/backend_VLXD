@@ -92,6 +92,12 @@ exports.create = async (data, userId) => {
         status,
       ]
     );
+    // Ghi nhận lịch sử giao dịch
+    await connection.query(
+      `INSERT INTO supplier_payment (supplier_transactions_id, amount, note) 
+      VALUES (?, ?, ?)`,
+      [suppliers_id, paid_amount, note]
+    );
     await connection.commit();
     return { importSlipId };
   } catch (error) {

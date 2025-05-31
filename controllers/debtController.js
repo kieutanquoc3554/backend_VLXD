@@ -50,3 +50,25 @@ exports.getAllSupplierDebts = async (req, res) => {
     res.status(500).json({ message: "Có lỗi xảy ra!", error });
   }
 };
+
+exports.getSupplierDebtDetail = async (req, res) => {
+  const transactionId = req.params.id;
+  try {
+    const transaction = await debtModel.getTransactionById(transactionId);
+    if (!transaction) {
+      return res.status(404).json({ message: "Không tìm thấy công nợ" });
+    }
+    const items = await debtModel.getImportSlipItems(
+      transaction.import_slip_id
+    );
+    const payments = await debtModel.getPaymentsByTransactionId(transactionId);
+    return res.json({
+      ...transaction,
+      items,
+      payments,
+    });
+  } catch (error) {
+    console.error("Lỗi lấy chi tiết công nợ:", error);
+    res.status(500).json({ message: "Lỗi máy chủ" });
+  }
+};

@@ -44,3 +44,28 @@ exports.getSupplierDebts = async () => {
   const [supplierDebts] = await db.query(sql);
   return supplierDebts;
 };
+
+exports.getTransactionById = async (transactionId) => {
+  const transactionSQL = `SELECT st.*, s.name AS supplier_name, s.phone,  islip.note, islip.created_at
+                          FROM supplier_transactions st
+                          JOIN suppliers s ON st.supplier_id = s.id
+                          JOIN import_slips islip ON st.import_slip_id = islip.id
+                          WHERE st.id = ?`;
+  const [transaction] = await db.query(transactionSQL, [transactionId]);
+  return transaction[0];
+};
+
+exports.getImportSlipItems = async (importSlipId) => {
+  const sql = `SELECT isi.*, p.name, p.image_url, c.name AS category_name FROM import_slip_items isi 
+              JOIN products p ON p.id = isi.product_id
+              LEFT JOIN categories c ON c.id = p.category_id
+              WHERE isi.id = ?`;
+  const [items] = await db.query(sql, [importSlipId]);
+  return items;
+};
+
+exports.getPaymentsByTransactionId = async (transactionId) => {
+  const sql = `SELECT * FROM supplier_payment WHERE supplier_transactions_id = ?`;
+  const [rows] = await db.query(sql, [transactionId]);
+  return rows;
+};
