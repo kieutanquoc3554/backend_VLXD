@@ -5,5 +5,6 @@ const debtController = require("../controllers/debtController");
 router.get("/", debtController.getAllDebt);
 router.get("/:id", debtController.getDetailsDebtsById);
 router.post("/update/:id", debtController.updateDebtByOrderId);
+router.get("/get/supplierDebt", debtController.getAllSupplierDebts);
 
 module.exports = router;

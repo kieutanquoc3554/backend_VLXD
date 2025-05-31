@@ -24,23 +24,27 @@ exports.getProductById = async (id) => {
 };
 
 exports.create = async (data, userId) => {
-  const { note = "Nhập kho", items = [], suppliers_id } = data;
+  const { note = "Nhập kho", items = [], suppliers_id, paid_amount } = data;
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
+    // Tạo phiếu nhập
     const [importSlipResult] = await connection.query(
       `INSERT INTO import_slips (suppliers_id, note, created_by) VALUES (?, ?, ?)`,
       [suppliers_id, note, userId]
     );
     const importSlipId = importSlipResult.insertId;
     let total_price = 0;
+    // Các mặt hàng trong phiếu nhập
     for (const item of items) {
       const { product_id, quantity, unit_price, warehouse_location } = item;
       total_price += quantity * unit_price;
+      // Lưu chi tiết phiếu nhập
       await connection.query(
         `INSERT INTO import_slip_items (import_slip_id, product_id, quantity, unit_price, warehouse_location) VALUES (?, ?, ?, ?, ?)`,
         [importSlipId, product_id, quantity, unit_price, warehouse_location]
       );
+      // Cập nhật tồn kho
       const [rows] = await connection.query(
         "SELECT * FROM inventory WHERE product_id = ?",
         [product_id]
@@ -56,18 +60,37 @@ exports.create = async (data, userId) => {
           [product_id, quantity, warehouse_location]
         );
       }
+      // Cập nhật giá nhập vào
       await connection.query(
         `UPDATE products SET import_price = ? WHERE id = ?`,
         [unit_price, product_id]
       );
+      // Ghi log
       await connection.query(
         `INSERT INTO inventory_logs (product_id, type, quantity, note, created_by) VALUE (?, 'import', ?, ?, ?)`,
         [product_id, quantity, `Theo phiếu nhập ${importSlipId}`, userId]
       );
     }
+    // Cập nhật tổng tiền cho phiếu nhập
     await connection.query(
       `UPDATE import_slips SET total_price = ? WHERE id = ?`,
       [total_price, importSlipId]
+    );
+    const remaining_amount = total_price - paid_amount;
+    const status =
+      remaining_amount <= 0 ? "paid" : paid_amount > 0 ? "partial" : "unpaid";
+    // Ghi nhận công nợ nhà cung cấp
+    await connection.query(
+      `INSERT INTO supplier_transactions (supplier_id, import_slip_id, amount, paid_amount, remaining_amount, status)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        suppliers_id,
+        importSlipId,
+        total_price,
+        paid_amount,
+        remaining_amount,
+        status,
+      ]
     );
     await connection.commit();
     return { importSlipId };

@@ -33,3 +33,14 @@ exports.getDebtsByOrderId = async (order_id) => {
   });
   return debtMap[0];
 };
+
+exports.getSupplierDebts = async () => {
+  const sql = `SELECT st.id, s.id AS supplier_id, s.name AS supplier_name, islip.created_at AS import_date, 
+                st.amount, st.paid_amount, st.remaining_amount, st.status
+                FROM supplier_transactions st 
+                JOIN suppliers s ON st.supplier_id = s.id
+                JOIN import_slips islip ON st.import_slip_id = islip.id
+                ORDER BY islip.created_at DESC`;
+  const [supplierDebts] = await db.query(sql);
+  return supplierDebts;
+};

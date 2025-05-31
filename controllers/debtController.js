@@ -41,3 +41,12 @@ exports.updateDebtByOrderId = async (req, res) => {
     res.status(500).json({ message: "Lỗi khi cập nhật công nợ", error });
   }
 };
+
+exports.getAllSupplierDebts = async (req, res) => {
+  try {
+    const supplierDebts = await debtModel.getSupplierDebts();
+    res.status(200).json(supplierDebts);
+  } catch (error) {
+    res.status(500).json({ message: "Có lỗi xảy ra!", error });
+  }
+};
