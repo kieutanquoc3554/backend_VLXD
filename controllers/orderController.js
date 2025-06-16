@@ -96,3 +96,16 @@ exports.cancelOrder = async (req, res) => {
     res.status(500).json({ message: "Lỗi khi huỷ đơn hàng", error });
   }
 };
+
+exports.searchOrder = async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({ message: "Không có từ khoá tìm kiếm" });
+    }
+    const results = await Order.searchOrder(query);
+    res.json(results);
+  } catch (error) {
+    return res.status(500).json({ message: "Lỗi server!", error });
+  }
+};

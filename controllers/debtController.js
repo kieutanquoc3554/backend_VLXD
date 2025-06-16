@@ -1,6 +1,7 @@
 const debtModel = require("../models/debtModel");
 const orderModel = require("../models/orderModel");
 const paymentModel = require("../models/paymentModel");
+const supplierPaymentModel = require("../models/supplierPaymentModel");
 
 exports.getAllDebt = async (req, res) => {
   try {
@@ -55,6 +56,8 @@ exports.getSupplierDebtDetail = async (req, res) => {
   const transactionId = req.params.id;
   try {
     const transaction = await debtModel.getTransactionById(transactionId);
+    console.log(transaction);
+
     if (!transaction) {
       return res.status(404).json({ message: "Không tìm thấy công nợ" });
     }
@@ -70,5 +73,48 @@ exports.getSupplierDebtDetail = async (req, res) => {
   } catch (error) {
     console.error("Lỗi lấy chi tiết công nợ:", error);
     res.status(500).json({ message: "Lỗi máy chủ" });
+  }
+};
+
+exports.updateSupplierDebt = async (req, res) => {
+  const { amount } = req.body;
+  const { id } = req.params;
+  try {
+    await supplierPaymentModel.createSupplierPayment(
+      id,
+      amount,
+      `Thanh toán đơn hàng`
+    );
+    await res.status(200).json({ message: "Cập nhật thành công!" });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi máy chủ", error });
+  }
+};
+
+exports.searchDebts = async (req, res) => {
+  const { query } = req.query;
+  if (!query) {
+    return res.status(400).json({ message: "Thiếu từ khoá tìm kiếm!" });
+  }
+  try {
+    const result = await debtModel.searchDebts(query);
+    res.json(result);
+  } catch (error) {
+    console.error("Lỗi tìm kiếm công nợ:", err);
+    res.status(500).json({ error: "Lỗi máy chủ khi tìm kiếm công nợ" });
+  }
+};
+
+exports.filterDebtsByDate = async (req, res) => {
+  const { date } = req.query;
+  if (!date) {
+    return res.status(400).json({ message: "Thiếu ngày giờ tìm kiếm!" });
+  }
+  try {
+    const result = await debtModel.filterDebtByDate(date);
+    res.json(result);
+  } catch (error) {
+    console.error("Lỗi tìm kiếm công nợ:", err);
+    res.status(500).json({ error: "Lỗi máy chủ khi tìm kiếm công nợ" });
   }
 };

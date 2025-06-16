@@ -7,6 +7,7 @@ const productRoutes = require("./routes/productRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const debtRoutes = require("./routes/debtRoutes");
+const billRoutes = require("./routes/billRoutes");
 const express = require("express");
 const cors = require("cors");
 const db = require("./utils/db");
@@ -28,6 +29,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/debt", debtRoutes);
+app.use("/api/bill", billRoutes);
 
 app.post("/upload", upload.single("image"), async (req, res) => {
   try {

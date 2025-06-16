@@ -1,7 +1,14 @@
 const db = require("../utils/db");
 
 exports.getAllCategories = async () => {
-  const [categories] = await db.query(`SELECT * FROM categories`);
+  const [categories] =
+    await db.query(`SELECT c.id, c.name, c.description, c.created_at, c.disabled,
+        c.deleted, COUNT(p.id) AS product_count
+        FROM categories c
+        LEFT JOIN products p ON p.category_id = c.id
+        GROUP BY c.id
+        ORDER BY c.id ASC;
+`);
   return categories;
 };
 

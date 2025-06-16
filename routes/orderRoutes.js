@@ -8,5 +8,6 @@ router.get("/:id", authMiddleware, OrderController.getOrdersById);
 router.post("/", authMiddleware, OrderController.createOrder);
 router.put("/:id/status", authMiddleware, OrderController.updateOrderStatus);
 router.put("/:id/cancel", authMiddleware, OrderController.cancelOrder);
+router.get("/utils/search", authMiddleware, OrderController.searchOrder);
 
 module.exports = router;

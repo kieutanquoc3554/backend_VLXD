@@ -24,7 +24,7 @@ exports.getProductById = async (id) => {
 };
 
 exports.create = async (data, userId) => {
-  const { note = "Nhập kho", items = [], suppliers_id, paid_amount } = data;
+  const { note = "Nhập kho", items, suppliers_id, paid_amount } = data;
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
@@ -80,7 +80,7 @@ exports.create = async (data, userId) => {
     const status =
       remaining_amount <= 0 ? "paid" : paid_amount > 0 ? "partial" : "unpaid";
     // Ghi nhận công nợ nhà cung cấp
-    await connection.query(
+    const [supplierTransactionResult] = await connection.query(
       `INSERT INTO supplier_transactions (supplier_id, import_slip_id, amount, paid_amount, remaining_amount, status)
       VALUES (?, ?, ?, ?, ?, ?)`,
       [
@@ -92,11 +92,12 @@ exports.create = async (data, userId) => {
         status,
       ]
     );
+    const transactionId = supplierTransactionResult.insertId;
     // Ghi nhận lịch sử giao dịch
     await connection.query(
       `INSERT INTO supplier_payment (supplier_transactions_id, amount, note) 
       VALUES (?, ?, ?)`,
-      [suppliers_id, paid_amount, note]
+      [transactionId, paid_amount, note]
     );
     await connection.commit();
     return { importSlipId };
