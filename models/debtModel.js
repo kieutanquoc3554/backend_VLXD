@@ -33,3 +33,78 @@ exports.getDebtsByOrderId = async (order_id) => {
   });
   return debtMap[0];
 };
+
+exports.getSupplierDebts = async () => {
+  const sql = `SELECT st.id, s.id AS supplier_id, s.name AS supplier_name, islip.created_at AS import_date, 
+                st.amount, st.paid_amount, st.remaining_amount, st.status
+                FROM supplier_transactions st 
+                JOIN suppliers s ON st.supplier_id = s.id
+                JOIN import_slips islip ON st.import_slip_id = islip.id
+                ORDER BY islip.created_at DESC`;
+  const [supplierDebts] = await db.query(sql);
+  return supplierDebts;
+};
+
+exports.searchDebts = async (query) => {
+  const likeQuery = `%${query}%`;
+  const customerSearchQuery = `SELECT o.id AS order_id, c.id AS customer_id, c.name AS customer_name, o.total_price,
+                                o.paid_amount, (o.total_price - o.paid_amount) AS remaining_debt, o.order_date
+                                FROM orders o 
+                                JOIN customer c ON o.customer_id = c.id
+                                WHERE c.name LIKE ?
+                                ORDER BY o.order_date DESC`;
+  const supplierSearchQuery = `SELECT st.id, s.id AS supplier_id, s.name AS supplier_name, islip.created_at AS import_date, 
+                                st.amount, st.paid_amount, st.remaining_amount, st.status
+                                FROM supplier_transactions st 
+                                JOIN suppliers s ON st.supplier_id = s.id
+                                JOIN import_slips islip ON st.import_slip_id = islip.id
+                                WHERE s.name LIKE ?
+                                ORDER BY islip.created_at DESC`;
+  const [customerDebt] = await db.query(customerSearchQuery, [likeQuery]);
+  const [supplierDebt] = await db.query(supplierSearchQuery, [likeQuery]);
+  return { customer: customerDebt, supplier: supplierDebt };
+};
+
+exports.filterDebtByDate = async (date) => {
+  const customerSearchQuery = `SELECT o.id AS order_id, c.id AS customer_id, c.name AS customer_name, o.total_price,
+                                o.paid_amount, (o.total_price - o.paid_amount) AS remaining_debt, o.order_date
+                                FROM orders o 
+                                JOIN customer c ON o.customer_id = c.id
+                                WHERE DATE(o.order_date) = ?
+                                ORDER BY o.order_date DESC`;
+  const supplierSearchQuery = `SELECT st.id, s.id AS supplier_id, s.name AS supplier_name, islip.created_at AS import_date, 
+                                st.amount, st.paid_amount, st.remaining_amount, st.status
+                                FROM supplier_transactions st 
+                                JOIN suppliers s ON st.supplier_id = s.id
+                                JOIN import_slips islip ON st.import_slip_id = islip.id
+                                WHERE DATE(islip.created_at) = ?
+                                ORDER BY islip.created_at DESC`;
+  const [customerDebt] = await db.query(customerSearchQuery, [date]);
+  const [supplierDebt] = await db.query(supplierSearchQuery, [date]);
+  return { customer: customerDebt, supplier: supplierDebt };
+};
+
+exports.getTransactionById = async (transactionId) => {
+  const transactionSQL = `SELECT st.*, s.name AS supplier_name, s.phone,  islip.note, islip.created_at
+                          FROM supplier_transactions st
+                          JOIN suppliers s ON st.supplier_id = s.id
+                          JOIN import_slips islip ON st.import_slip_id = islip.id
+                          WHERE st.id = ?`;
+  const [transaction] = await db.query(transactionSQL, [transactionId]);
+  return transaction[0];
+};
+
+exports.getImportSlipItems = async (importSlipId) => {
+  const sql = `SELECT isi.*, p.name, p.image_url, c.name AS category_name FROM import_slip_items isi 
+              JOIN products p ON p.id = isi.product_id
+              LEFT JOIN categories c ON c.id = p.category_id
+              WHERE isi.import_slip_id = ?`;
+  const [items] = await db.query(sql, [importSlipId]);
+  return items;
+};
+
+exports.getPaymentsByTransactionId = async (transactionId) => {
+  const sql = `SELECT * FROM supplier_payment WHERE supplier_transactions_id = ?`;
+  const [rows] = await db.query(sql, [transactionId]);
+  return rows;
+};
