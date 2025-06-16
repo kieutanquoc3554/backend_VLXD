@@ -67,6 +67,7 @@ exports.login = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "None",
     });
     res.json({ message: "Đăng nhập thành công!" });
   } catch (error) {
