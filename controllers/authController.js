@@ -30,6 +30,7 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
+  const isProduction = process.env.NODE_ENV === "production";
   try {
     const now = new Date();
     const employee = await employeeModel.getEmployeeByEmail(email);
@@ -65,9 +66,10 @@ exports.login = async (req, res) => {
     );
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
+      secure: isProduction,
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: "None",
+      sameSite: isProduction ? "None" : "Lax",
+      path: "/",
     });
     res.json({ message: "Đăng nhập thành công!" });
   } catch (error) {
