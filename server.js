@@ -16,8 +16,16 @@ const cookieParser = require("cookie-parser");
 const upload = require("./middleware/upload");
 const cloudinary = require("./utils/cloudinary");
 
+const isProduction = process.env.NODE_ENV === "production";
 const app = express();
-app.use(cors({ origin: true, credentials: true }));
+app.use(
+  cors({
+    origin: isProduction
+      ? "https://frontend-vlxd.vercel.app"
+      : "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 

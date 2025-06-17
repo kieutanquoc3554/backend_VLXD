@@ -91,7 +91,12 @@ exports.checkAuth = async (req, res) => {
   if (!req.cookies.token) {
     return res.status(401).json({ message: "Chưa đăng nhập" });
   }
-  res.json({ message: "Đã đăng nhập" });
+  try {
+    const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+    res.json({ message: "Đã đăng nhập", user: decoded });
+  } catch (err) {
+    res.status(401).json({ message: "Token không hợp lệ" });
+  }
 };
 
 exports.getUserInfo = async (req, res) => {
