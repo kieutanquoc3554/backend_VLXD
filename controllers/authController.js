@@ -32,25 +32,6 @@ exports.login = async (req, res) => {
   const { email, password } = req.body;
   const isProduction = process.env.NODE_ENV === "production";
   try {
-    const now = new Date();
-    const employee = await employeeModel.getEmployeeByEmail(email);
-    if (!employee)
-      return res.status(400).json({ message: "Email không tồn tại" });
-    if (employee.suspended_permanently) {
-      return res
-        .status(403)
-        .json({ message: "Tài khoản bị đình chỉ vĩnh viễn." });
-    }
-    if (employee.suspended_until && new Date(employee.suspended_until) > now) {
-      const suspendedUntil = format(
-        new Date(employee.suspended_until),
-        "dd/MM/yyyy HH:mm"
-      );
-      return res.status(403).json({
-        message: `Tài khoản bị đình chỉ đến ${suspendedUntil}`,
-      });
-    }
-
     const isMatch = await bcrypt.compare(password, employee.password_hash);
     if (!isMatch)
       return res.status(401).json({ message: "Mật khẩu không đúng" });

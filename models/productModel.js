@@ -43,6 +43,12 @@ exports.getProductById = async (id) => {
   return rows[0];
 };
 
+exports.updateProductFields = async (id, fields) => {
+  const sql = "UPDATE products SET ? WHERE id = ?";
+  const [result] = await db.query(sql, [fields, id]);
+  return result;
+};
+
 exports.updateProduct = async (id, product, userId) => {
   const sql = "UPDATE products SET ? WHERE id = ?";
   const [result] = await db.query(sql, [product, id]);

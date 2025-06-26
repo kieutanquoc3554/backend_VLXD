@@ -38,11 +38,11 @@ exports.createProduct = async (req, res) => {
       image_url,
     } = req.body);
     const result = await productModel.createProduct(product);
-    await inventoryModel.create({
-      product_id: result.insertId,
-      quantity: product.stock_quantity,
-      warehouse_location: "Cà Mau",
-    });
+    // await inventoryModel.create({
+    //   product_id: result.insertId,
+    //   quantity: product.stock_quantity,
+    //   warehouse_location: "Cà Mau",
+    // });
     await res.status(201).json({
       message: "Thêm sản phẩm thành công!",
       product_id: result,
@@ -97,10 +97,10 @@ exports.hideProduct = async (req, res) => {
     );
     const currentProduct = product[0];
     if (!currentProduct) {
-      res.status(404).json({ message: "Không tìm thấy sản phẩm!" });
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm!" });
     }
     const newDisabledValue = currentProduct.disabled === 1 ? 0 : 1;
-    await productModel.updateProduct(id, { disabled: newDisabledValue });
+    await productModel.updateProductFields(id, { disabled: newDisabledValue });
     res.status(200).json({
       message: newDisabledValue
         ? "Sản phẩm đã bị ẩn!"
