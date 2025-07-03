@@ -38,11 +38,6 @@ exports.createProduct = async (req, res) => {
       image_url,
     } = req.body);
     const result = await productModel.createProduct(product);
-    // await inventoryModel.create({
-    //   product_id: result.insertId,
-    //   quantity: product.stock_quantity,
-    //   warehouse_location: "Cà Mau",
-    // });
     await res.status(201).json({
       message: "Thêm sản phẩm thành công!",
       product_id: result,

@@ -56,8 +56,6 @@ exports.getSupplierDebtDetail = async (req, res) => {
   const transactionId = req.params.id;
   try {
     const transaction = await debtModel.getTransactionById(transactionId);
-    console.log(transaction);
-
     if (!transaction) {
       return res.status(404).json({ message: "Không tìm thấy công nợ" });
     }
